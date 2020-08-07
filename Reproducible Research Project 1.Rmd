@@ -11,20 +11,76 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+First Step: Upload data
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+data <- read.csv("activity.csv")
+head(data)
+data1 <-aggregate(data$steps, list(data$date), FUN=sum)
+colnames(data1) <- c("date", "steps")
+head(data1)
 ```
 
-## Including Plots
+Now, this is a histogram of the steps taken every day
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+hist(data1$steps)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Then, we compute the mean and median of steps taken
+
+```{r}
+mean(data1$steps, na.rm = TRUE)
+median(data1$steps, na.rm = TRUE)
+```
+
+Time Series plot of the average steps taken
+
+```{r}
+data2 <-aggregate(data$steps, list(data$date), FUN=mean)
+colnames(data2) <- c("date", "steps")
+head(data2)
+plot(data1$steps,type = 'l')
+```
+
+The inverval that has the highest average of steps
+
+```{r}
+data3 <-aggregate(steps~interval,data = data, FUN=mean)
+colnames(data3) <- c("interval", "steps")
+head(data3)
+plot(data3$steps,type = 'l')
+data3[which.max(data3$steps),]
+```
+
+Strategy for imputing missing data and histogram  
+For me missing data refers to 0 steps at that interval
+
+```{r}
+data[is.na(data$steps),1] <- 0
+data1 <-aggregate(data$steps, list(data$date), FUN=sum)
+colnames(data1) <- c("date", "steps")
+hist(data1$steps)
+mean(data1$steps, na.rm = TRUE)
+median(data1$steps, na.rm = TRUE)
+```
+
+Panel board for weekends and weekdays
+
+```{r}
+data$date <- as.Date(data$date, format = "%Y-%m-%d")
+data$weekday <- weekdays(data$date)
+data$day <- ifelse(data$weekday=='Saturday' | data$weekday=='Sunday', 'weekend','weekday')
+head(data)
+
+library(ggplot2)
+data4 <- aggregate(steps~interval+day,data=data,FUN=mean)
+head(data4)
+g <- ggplot(data4, aes(interval, steps))
+g+geom_line(col="darkblue")+ggtitle("Average steps weekdays vs weekends")+xlab("Interval")+ylab("Steps")+facet_grid(day ~ .)
+```
+
+
+
+
+
